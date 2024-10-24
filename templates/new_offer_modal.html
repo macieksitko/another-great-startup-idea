@@ -1,0 +1,61 @@
+<div class="modal-dialog modal-dialog-centered">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">New Offer</h5>
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="modal"
+        aria-label="Close"
+      ></button>
+    </div>
+    <form>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="offer-title">Offer Title</label>
+          <input
+            type="text"
+            class="form-control"
+            id="offer-title"
+            name="offer-title"
+            required
+          />
+          <label for="offer-company">Offer Company</label>
+          <input
+            type="text"
+            class="form-control"
+            id="offer-company"
+            name="offer-company"
+            required
+          />
+          <label for="offer-description">Offer Description</label>
+          <textarea
+            class="form-control"
+            id="offer-description"
+            name="offer-description"
+            required
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button
+          type="submit"
+          class="new-offer-button btn btn-primary"
+          hx-post="/new_offer"
+          hx-target="#job-list-container"
+          hx-indicator=".new-offer-spinner, .new-offer-button-text"
+        >
+        <span class="new-offer-button-text">Save offer</span>
+        <img
+          id="new-offer-spinner"
+          class="new-offer-spinner htmx-indicator"
+          src="/public/images/bars.svg"
+          alt="Loading..."
+          />
+      </div>
+    </form>
+  </div>
+</div>
