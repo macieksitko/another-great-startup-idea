@@ -47,6 +47,7 @@
           hx-post="/new_offer"
           hx-target="#job-list-container"
           hx-indicator=".new-offer-spinner, .new-offer-button-text"
+          hx-on::after-request="closeNewOfferModal()"
         >
         <span class="new-offer-button-text">Save offer</span>
         <img
