@@ -7,15 +7,15 @@
     class="search-input"
     hx-post="/search"
     hx-trigger="keyup changed delay:500ms"
-    hx-target="#job-list-container"
-    hx-indicator="searching-spinner, .search-button-text"
+    hx-target="#job-list"
+    hx-indicator=".searching-spinner, .search-button-text"
   />
   <button
     id="search-button"
     class="search-button"
     hx-post="/search"
     hx-trigger="click"
-    hx-target="#job-list-container"
+    hx-target="#job-list"
     hx-indicator=".searching-spinner, .search-button-text"
   >
   <span class="search-button-text">Search</span>
@@ -30,12 +30,12 @@
 <style>
   .search-container {
     display: flex;
-    justify-content: center;
+    justify-content: left;
     margin-top: 15px;
     margin-bottom: 20px;
     padding-left: 10px;
     padding-right: 10px;
-    width: 100%;
+    width: 90%;
   }
   .search-input {
     width: 100%;

@@ -1,11 +1,19 @@
 CREATE TABLE job_offers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
-    company TEXT NOT NULL,
-    description TEXT NOT NULL
+    author TEXT NOT NULL,
+    description TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    views_count INTEGER DEFAULT 0
 );
 
-INSERT INTO job_offers (id, title, company, description) VALUES
+CREATE TABLE views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_offer_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO job_offers (id, title, author, description) VALUES
 (1, 'Senior Software Engineer', 'TechCorp Inc.', 'Join our team to build cutting-edge web applications using the latest technologies.'),
 (2, 'UX Designer', 'DesignMasters LLC', 'Create intuitive and beautiful user interfaces for our clients'' products.'),
 (3, 'Senior Unicorn Wrangler', 'MagicTech Inc.', 'Seeking an experienced unicorn handler to manage our growing herd of mythical creatures. Must be proficient in rainbow magic and horn polishing.'),

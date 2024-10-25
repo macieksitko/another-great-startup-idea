@@ -1,11 +1,15 @@
 <ul class="job-list" id="job-list">
   {{ range .jobOffers }}
   <li class="job-item">
-    <div class="greatness-points">✨ 99 GP</div>
-    <h3 class="job-title">🚀 {{ .Title }}</h2>
-    <div class="company">🏢 {{ .Company }}</div>
+    <div class="top-section" >
+      <div class="title-section">
+        <h3 class="job-title">🚀 {{ .Title }}</h2>
+        <div class="author">👨‍💼 {{ .Author }}</div>
+        <div class="created-at">🕒 {{ .DaysAgo }}</div>
+      </div>
+      <div class="greatness-points">✨ 99 GP</div>
+    </div>
     <p class="description">📝 {{ .Description }}</p>
-    <a href="#" class="apply-btn">Apply Now 👉</a>
   </li>
   {{ end }}
 </ul>
@@ -24,45 +28,52 @@
     background-color: #f9f9f9;
     border-radius: 8px;
     padding: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    position: relative;  /* This is important */
+    display: flex;
+    flex-direction: column;
+  }
+  .job-item:hover {
+    background-color: #f0f0f0;
+    cursor: pointer;
+  }
+  .job-item .top-section {
+    display: flex;
+    justify-content: space-between;
+  }
+  .job-item .top-section .title-section {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 20px;
+  }
+  .job-item .top-section .title-section .created-at {
+    color: #666;
+    background-color: #5a4ee1;
+    font-family: sans-serif;
+    color: white;
+    border-radius: 15px;
+    font-size: 0.8em;
+    padding: 5px 10px;
   }
   .job-title {
-    font-size: 1.4em;
+    font-size: 1.3em;
+    margin-bottom: 0;
     color: #333;
-    margin-bottom: 10px;
   }
-  .company {
+  .author {
     font-weight: bold;
     color: #666;
-    margin-bottom: 10px;
   }
   .description {
     color: #555;
-    margin-bottom: 15px;
-  }
-  .apply-btn {
-    display: inline-block;
-    background-color: #007bff;
-    color: white;
-    padding: 10px 15px;
-    border-radius: 5px;
-    text-decoration: none;
-    transition: background-color 0.3s;
-  }
-  .apply-btn:hover {
-    background-color: #0056b3;
+    font-family: sans-serif;
   }
   .greatness-points {
-    position: absolute;
-    top: 20px;
-    right: 20px;
     background-color: #ffd700;
     color: #333;
     padding: 5px 10px;
     border-radius: 15px;
     font-weight: bold;
-    font-size: 0.9em;
   }
 </style>
