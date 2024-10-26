@@ -12,6 +12,7 @@
       integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
       crossorigin="anonymous"
     ></script>
+    <script src="https://unpkg.com/htmx-ext-response-targets@2.0.0/response-targets.js"></script>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -28,6 +29,7 @@
         height: 100%;
         overflow: hidden;
       }
+
       body {
         display: flex;
         flex-direction: column;
@@ -109,11 +111,21 @@
         width: 70%;
         height: 70vh;
       }
-      .content-wrapper h1 {
+      .content-wrapper .main-title {
+        display: flex;
+        align-items: center;
+        gap: 40px;
+      }
+      .content-wrapper .main-title h1 {
         margin-left: 20px;
         color: #f0e6d2;
         font-weight: bold;
         padding-bottom: 5px;
+      }
+      .content-wrapper .main-title img {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 45px;
       }
       .job-list-container {
         width: 100%;
@@ -164,7 +176,7 @@
       }
     </style>
   </head>
-  <body>
+  <body hx-ext="response-targets">
     <nav class="navbar">
       <div class="nav-content">
         <div class="nav-links">
@@ -186,7 +198,10 @@
       <img src="/public/images/rectangle.svg" alt="Top section image" />
     </div>
     <div class="content-wrapper">
-      <h1>Your another great startup idea 🧠</h1>
+      <div class="main-title">
+        <h1>Your another great startup idea</h1>
+        <img src="/public/images/brain.svg" alt="Brain icon" />
+      </div>
       <div class="search-container">{{ template "search.html" . }}</div>
       <div class="job-filters-container">
         {{ template "job_filters.html" . }}

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -28,6 +30,12 @@ type GetJobOffer struct {
 	DaysAgo     string
 }
 
+type CreateJobOffer struct {
+	Title    string `form:"title" validate:"required"`
+	Description   string `form:"description" validate:"required"`
+	Author     string `form:"author" validate:"required"`
+}
+
 func main() {
 	// Open the SQLite database
 	db, err := sql.Open("sqlite3", "./jobs.db")
@@ -43,7 +51,7 @@ func main() {
 	r.LoadHTMLGlob("templates/*")
 
 	r.GET("/", func(c *gin.Context) {
-		rows, err := db.Query("SELECT id, title, author, description, created_at FROM job_offers")
+		rows, err := db.Query("SELECT id, title, author, description, created_at FROM job_offers ORDER BY id DESC")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -78,7 +86,7 @@ func main() {
 
 	r.POST("/search", func(c *gin.Context) {
 		query := c.PostForm("query")
-		rows, err := db.Query("SELECT id, title, author, description, created_at FROM job_offers WHERE title LIKE ?", "%"+query+"%")
+		rows, err := db.Query("SELECT id, title, author, description, created_at FROM job_offers WHERE title LIKE ? ORDER BY id DESC", "%"+query+"%")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -114,40 +122,63 @@ func main() {
 		})
 	})
 	r.POST("/new_offer", func(c *gin.Context) {
-		title := c.PostForm("offer-title")
-		description := c.PostForm("offer-description")
-		author := c.PostForm("offer-author")
+		var newOffer CreateJobOffer
+
+		validate := validator.New()
+
+		// Bind the form data to the struct
+		if err := c.ShouldBind(&newOffer); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Validate the struct
+		if err := validate.Struct(newOffer); err != nil {
+			errorMessages := make(map[string]string)
+			for _, err := range err.(validator.ValidationErrors) {
+				fieldName := err.Field()
+				errorMessages[fieldName] = fmt.Sprintf("%s is %s", fieldName, err.Tag())
+			}
+			c.HTML(http.StatusBadRequest, "new_offer_modal.html", gin.H{
+				"title": "New Offer with error",
+				"errors": errorMessages,
+			})
+			return
+		}
+
 	
 		// Insert the new job offer
-		result, err := db.Exec("INSERT INTO job_offers (title, description, author) VALUES (?, ?, ?)", title, description, author)
+		result, err := db.Exec("INSERT INTO job_offers (title, description, author) VALUES (?, ?, ?)", newOffer.Title, newOffer.Description, newOffer.Author)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 	
 		// Get the ID of the newly inserted job offer
-		newID, err := result.LastInsertId()
+		_, err = result.LastInsertId()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 	
 		// Fetch all job offers, including the new one
-		rows, err := db.Query("SELECT id, title, author, description FROM job_offers ORDER BY id DESC")
+		rows, err := db.Query("SELECT id, title, author, description, created_at FROM job_offers ORDER BY id DESC")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		defer rows.Close()
 	
-		var jobOffers []JobOffer
+		var jobOffers []GetJobOffer
 		for rows.Next() {
-			var job JobOffer
-			err := rows.Scan(&job.ID, &job.Title, &job.Author, &job.Description)
+			var job GetJobOffer
+			var createdAt time.Time
+			err := rows.Scan(&job.ID, &job.Title, &job.Author, &job.Description, &createdAt)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
+			job.DaysAgo = formatTimeAgo(createdAt)
 			jobOffers = append(jobOffers, job)
 		}
 	
@@ -158,11 +189,11 @@ func main() {
 
 		time.Sleep(2 * time.Second)
 
+		fmt.Println(jobOffers)
 	
 		c.HTML(http.StatusOK, "job_list.html", gin.H{
 			"title":     "Job Offers",
 			"jobOffers": jobOffers,
-			"newJobID":  newID,
 		})
 	})
 
