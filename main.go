@@ -5,13 +5,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
+	sqlite_vec "github.com/asg017/sqlite-vec-go-bindings/cgo"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
-
+	client "github.com/macieksitko/another-great-startup-idea/embeddings/client"
 	_ "github.com/mattn/go-sqlite3"
 )
+
 
 type JobOffer struct {
 	ID          int
@@ -37,12 +40,24 @@ type CreateJobOffer struct {
 }
 
 func main() {
+	client := client.NewClient(
+        "http://localhost:8000",
+        "",
+    )
 	// Open the SQLite database
-	db, err := sql.Open("sqlite3", "./jobs.db")
+	sqlite_vec.Auto()
+
+	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+		// Run initialization script
+	err = initDatabaseFromFile(db, "init.sql")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	r := gin.Default()
 	
@@ -107,7 +122,7 @@ func main() {
 			jobResults = append(jobResults, job)
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 
 		c.HTML(http.StatusOK, "job_list.html", gin.H{
 			"title":     "Search Results",
@@ -179,7 +194,11 @@ func main() {
 				return
 			}
 			job.DaysAgo = formatTimeAgo(createdAt)
+			fmt.Println((job.Description))
+
 			jobOffers = append(jobOffers, job)
+
+			embeddings := getEmbeddings(job.Description)
 		}
 	
 		if err := rows.Err(); err != nil {
@@ -189,7 +208,6 @@ func main() {
 
 		time.Sleep(2 * time.Second)
 
-		fmt.Println(jobOffers)
 	
 		c.HTML(http.StatusOK, "job_list.html", gin.H{
 			"title":     "Job Offers",
@@ -212,4 +230,20 @@ func formatTimeAgo(t time.Time) string {
 	default:
 		return fmt.Sprintf("%d days ago", days)
 	}
+}
+
+func initDatabaseFromFile(db *sql.DB, filename string) error {
+	// Read the contents of the SQL file
+	initScript, err := os.ReadFile(filename)
+	if err != nil {
+		return fmt.Errorf("error reading init file: %v", err)
+	}
+
+	// Execute the script
+	_, err = db.Exec(string(initScript))
+	if err != nil {
+		return fmt.Errorf("error initializing database: %v", err)
+	}
+
+	return nil
 }

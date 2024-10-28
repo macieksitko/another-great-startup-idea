@@ -18,3 +18,7 @@ INSERT INTO job_offers (id, title, author, description) VALUES
 (2, 'UX Designer', 'DesignMasters LLC', 'Create intuitive and beautiful user interfaces for our clients'' products.'),
 (3, 'Senior Unicorn Wrangler', 'MagicTech Inc.', 'Seeking an experienced unicorn handler to manage our growing herd of mythical creatures. Must be proficient in rainbow magic and horn polishing.'),
 (4, 'Chief Meme Officer', 'Viral Dreams LLC', 'Lead our meme creation team to produce the dankest content on the internet. Knowledge of current trends and cat videos is a must.');
+
+create virtual table job_offers_embeddings using vec0(
+  embedding float[384]
+);
