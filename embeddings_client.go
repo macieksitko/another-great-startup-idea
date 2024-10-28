@@ -13,61 +13,51 @@ import (
 type Client struct {
     httpClient *http.Client
     baseURL    string
-    apiKey     string
 }
 
 // NewClient creates a new API client
-func NewClient(baseURL, apiKey string) *Client {
+func NewEmbeddingsClient(baseURL string) *Client {
     return &Client{
         httpClient: &http.Client{
             Timeout: 10 * time.Second,
         },
         baseURL: baseURL,
-        apiKey:  apiKey,
     }
 }
 
 // Post represents the data structure for a post
-type Post struct {
-    UserID int    `json:"userId"`
-    Title  string `json:"title"`
-    Body   string `json:"body"`
+type EmbedRequest struct {
+    Texts []string `json:"texts"`
 }
 
-// GetPosts fetches posts from the API
-func (c *Client) GetPosts() ([]Post, error) {
-    resp, err := c.makeRequest("GET", "/posts", nil)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
-
-    var posts []Post
-    if err := json.NewDecoder(resp.Body).Decode(&posts); err != nil {
-        return nil, err
-    }
-    return posts, nil
+type EmbedResponse struct {
+    Embeddings [][]float32 `json:"embeddings"`
 }
 
 // CreatePost creates a new post
-func (c *Client) CreatePost(post Post) error {
-    jsonData, err := json.Marshal(post)
+func (c *Client) Embed(request EmbedRequest) ([][]float32, error) {
+    jsonData, err := json.Marshal(request)
     if err != nil {
-        return err
+        return nil, err
     }
 
-    resp, err := c.makeRequest("POST", "/posts", bytes.NewBuffer(jsonData))
+    resp, err := c.makeRequest("POST", "/embed", bytes.NewBuffer(jsonData))
     if err != nil {
-        return err
+        return nil, err
     }
     defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
         body, _ := io.ReadAll(resp.Body)
-        return fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+        return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
     }
 
-    return nil
+    var response EmbedResponse
+    if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+        return nil, err
+    }
+
+    return response.Embeddings, nil
 }
 
 // makeRequest is a helper function to make HTTP requests
@@ -78,7 +68,6 @@ func (c *Client) makeRequest(method, endpoint string, body io.Reader) (*http.Res
     }
 
     req.Header.Set("Content-Type", "application/json")
-    req.Header.Set("Authorization", "Bearer "+c.apiKey)
 
     return c.httpClient.Do(req)
 }

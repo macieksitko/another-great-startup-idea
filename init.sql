@@ -20,5 +20,5 @@ INSERT INTO job_offers (id, title, author, description) VALUES
 (4, 'Chief Meme Officer', 'Viral Dreams LLC', 'Lead our meme creation team to produce the dankest content on the internet. Knowledge of current trends and cat videos is a must.');
 
 create virtual table job_offers_embeddings using vec0(
-  embedding float[384]
+    embedding float[384]
 );

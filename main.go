@@ -11,7 +11,6 @@ import (
 	sqlite_vec "github.com/asg017/sqlite-vec-go-bindings/cgo"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
-	embeddings_client "github.com/macieksitko/another-great-startup-idea/embeddings_client"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -40,10 +39,10 @@ type CreateJobOffer struct {
 }
 
 func main() {
-	client := embeddings_client.NewClient(
+	embeddings_client := NewEmbeddingsClient(
         "http://localhost:8000",
-        "",
     )
+
 	// Open the SQLite database
 	sqlite_vec.Auto()
 
@@ -120,6 +119,8 @@ func main() {
 			}
 			job.DaysAgo = formatTimeAgo(createdAt)
 			jobResults = append(jobResults, job)
+
+
 		}
 
 		time.Sleep(1 * time.Second)
@@ -170,14 +171,39 @@ func main() {
 		}
 	
 		// Get the ID of the newly inserted job offer
-		_, err = result.LastInsertId()
+		newJobOfferId, err := result.LastInsertId()
 		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		embedding, err := embeddings_client.Embed(EmbedRequest{
+			Texts: []string{newOffer.Description},
+		})
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		values, err := sqlite_vec.SerializeFloat32(embedding[0])
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		// Insert the embedding with the same ID
+		_, err = db.Exec(`INSERT INTO job_offers_embeddings(rowid, embedding) VALUES (?, ?)`, newJobOfferId, values)
+
+		if err != nil {
+			fmt.Println(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 	
 		// Fetch all job offers, including the new one
 		rows, err := db.Query("SELECT id, title, author, description, created_at FROM job_offers ORDER BY id DESC")
+
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -196,9 +222,7 @@ func main() {
 			job.DaysAgo = formatTimeAgo(createdAt)
 			fmt.Println((job.Description))
 
-			jobOffers = append(jobOffers, job)
-
-			embeddings := getEmbeddings(job.Description)
+			jobOffers = append(jobOffers, job)	
 		}
 	
 		if err := rows.Err(); err != nil {
