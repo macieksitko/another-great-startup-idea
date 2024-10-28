@@ -11,7 +11,7 @@ import (
 	sqlite_vec "github.com/asg017/sqlite-vec-go-bindings/cgo"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
-	client "github.com/macieksitko/another-great-startup-idea/embeddings/client"
+	embeddings_client "github.com/macieksitko/another-great-startup-idea/embeddings_client"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -40,7 +40,7 @@ type CreateJobOffer struct {
 }
 
 func main() {
-	client := client.NewClient(
+	client := embeddings_client.NewClient(
         "http://localhost:8000",
         "",
     )
