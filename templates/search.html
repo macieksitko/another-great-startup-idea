@@ -5,15 +5,15 @@
     name="query"
     placeholder="Search for jobs..."
     class="search-input"
-    hx-post="/search"
-    hx-trigger="keyup changed delay:500ms"
+    hx-post="/search_embeddings"
+    hx-trigger="keyup changed delay:200ms"
     hx-target="#job-list"
     hx-indicator=".searching-spinner, .search-button-text"
   />
   <button
     id="search-button"
     class="search-button"
-    hx-post="/search"
+    hx-post="/search_embeddings"
     hx-trigger="click"
     hx-target="#job-list"
     hx-indicator=".searching-spinner, .search-button-text"
@@ -27,37 +27,3 @@
   />
 </div>
 
-<style>
-  .search-container {
-    display: flex;
-    justify-content: left;
-    margin-top: 15px;
-    margin-bottom: 20px;
-    padding-left: 10px;
-    padding-right: 10px;
-    width: 90%;
-  }
-  .search-input {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    border: 2px solid #4a3c31;
-    border-radius: 10px 0 0 10px;
-    outline: none;
-    font-family: "Papyrus", "Comic Sans MS", sans-serif;
-  }
-  .search-button {
-    padding: 0px 20px;
-    font-size: 16px;
-    background-color: #4a3c31;
-    color: #e6d8cc;
-    border: none;
-    border-radius: 0 5px 5px 0;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    font-family: "Papyrus", "Comic Sans MS", sans-serif;
-  }
-  .search-button:hover {
-    background-color: #3a2c21;
-  }
-</style>

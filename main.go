@@ -30,6 +30,7 @@ type GetJobOffer struct {
 	Author     string
 	Description string
 	DaysAgo     string
+	Distance   float64
 }
 
 type CreateJobOffer struct {
@@ -58,11 +59,66 @@ func main() {
 		log.Fatal(err)
 	}
 
+    rows, err := db.Query("SELECT description FROM job_offers")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer rows.Close()
+
+    var descriptions []string
+    for rows.Next() {
+        var description string
+        if err := rows.Scan(&description); err != nil {
+            log.Fatal(err)
+        }
+        descriptions = append(descriptions, description)
+    }
+    if err = rows.Err(); err != nil {
+        log.Fatal(err)
+    }
+
+    initial_embeddings, err := embeddings_client.Embed(EmbedRequest{
+        Texts: descriptions,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+	serialized_embedding_0, err := sqlite_vec.SerializeFloat32(initial_embeddings[0])
+	if err != nil {
+		log.Fatal(err)
+	}
+	serialized_embedding_1, err := sqlite_vec.SerializeFloat32(initial_embeddings[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+	serialized_embedding_2, err := sqlite_vec.SerializeFloat32(initial_embeddings[2])
+	if err != nil {
+		log.Fatal(err)
+	}
+	serialized_embedding_3, err := sqlite_vec.SerializeFloat32(initial_embeddings[3])
+	if err != nil {
+		log.Fatal(err)
+	}
+	if _, err = db.Exec(`INSERT INTO job_offers_embeddings(rowid, embedding) VALUES (?, ?)`, 1, serialized_embedding_0); err != nil {
+		log.Fatal(err)
+	}
+	if _, err = db.Exec(`INSERT INTO job_offers_embeddings(rowid, embedding) VALUES (?, ?)`, 2, serialized_embedding_1); err != nil {
+		log.Fatal(err)
+	}
+	if _, err = db.Exec(`INSERT INTO job_offers_embeddings(rowid, embedding) VALUES (?, ?)`, 3, serialized_embedding_2); err != nil {
+		log.Fatal(err)
+	}
+	if _, err = db.Exec(`INSERT INTO job_offers_embeddings(rowid, embedding) VALUES (?, ?)`, 4, serialized_embedding_3); err != nil {
+		log.Fatal(err)
+	}
+
+
 	r := gin.Default()
 	
 	r.Static("/public", "./public")
 
 	r.LoadHTMLGlob("templates/*")
+	r.Static("/static", "./static")
 
 	r.GET("/", func(c *gin.Context) {
 		rows, err := db.Query("SELECT id, title, author, description, created_at FROM job_offers ORDER BY id DESC")
@@ -119,17 +175,79 @@ func main() {
 			}
 			job.DaysAgo = formatTimeAgo(createdAt)
 			jobResults = append(jobResults, job)
-
-
 		}
-
-		time.Sleep(1 * time.Second)
 
 		c.HTML(http.StatusOK, "job_list.html", gin.H{
 			"title":     "Search Results",
 			"query":     query,
 			"jobOffers":  jobResults,
 		})
+	})
+
+	r.POST("/search_embeddings", func(c *gin.Context) {
+		query := c.PostForm("query")
+		search_embedding, err := embeddings_client.Embed(EmbedRequest{
+			Texts: []string{query},
+		})
+
+		if err != nil {
+			fmt.Println(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		serialized_search_embedding, err := sqlite_vec.SerializeFloat32(search_embedding[0])
+		if err != nil {
+			fmt.Println(err)
+
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		rows, err := db.Query(`
+			SELECT job_offers.id, 
+				job_offers.title, 
+				job_offers.author, 
+				job_offers.description, 
+				job_offers.created_at, 
+				ROUND(distance * 100, 2) as distance 
+			FROM job_offers_embeddings
+			LEFT JOIN job_offers ON job_offers.id = job_offers_embeddings.rowid
+			WHERE embedding MATCH ?
+			AND k = 10
+			ORDER BY distance
+		`, serialized_search_embedding)
+		
+		fmt.Println(rows)
+		if err != nil {
+			fmt.Println(err)
+
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		defer rows.Close()
+
+		var jobResults []GetJobOffer
+		for rows.Next() {
+			var job GetJobOffer
+			var createdAt time.Time
+
+			err := rows.Scan(&job.ID, &job.Title, &job.Author, &job.Description, &createdAt, &job.Distance)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			job.DaysAgo = formatTimeAgo(createdAt)
+			jobResults = append(jobResults, job)
+		}
+
+		c.HTML(http.StatusOK, "job_list.html", gin.H{
+			"title":     "Search Results",
+			"query":     query,
+			"jobOffers":  jobResults,
+		})
+
 	})
 
 	r.GET("/new_offer_modal", func(c* gin.Context) {
@@ -229,8 +347,6 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-
-		time.Sleep(2 * time.Second)
 
 	
 		c.HTML(http.StatusOK, "job_list.html", gin.H{

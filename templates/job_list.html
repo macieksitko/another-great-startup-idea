@@ -7,73 +7,10 @@
         <div class="author">👨‍💼 {{ .Author }}</div>
         <div class="created-at">🕒 {{ .DaysAgo }}</div>
       </div>
-      <div class="greatness-points">✨ 99 GP</div>
+      <div class="greatness-points">✨ {{ .Distance }}</div>
     </div>
     <p class="description">📝 {{ .Description }}</p>
   </li>
   {{ end }}
 </ul>
 
-<style>
-  .filter-btn:hover {
-    background-color: #333;
-    color: white;
-  }
-  .job-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-  }
-  .job-item {
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-  }
-  .job-item:hover {
-    background-color: #f0f0f0;
-    cursor: pointer;
-  }
-  .job-item .top-section {
-    display: flex;
-    justify-content: space-between;
-  }
-  .job-item .top-section .title-section {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 20px;
-  }
-  .job-item .top-section .title-section .created-at {
-    color: #666;
-    background-color: #5a4ee1;
-    font-family: sans-serif;
-    color: white;
-    border-radius: 15px;
-    font-size: 0.8em;
-    padding: 5px 10px;
-  }
-  .job-title {
-    font-size: 1.3em;
-    margin-bottom: 0;
-    color: #333;
-  }
-  .author {
-    font-weight: bold;
-    color: #666;
-  }
-  .description {
-    color: #555;
-    font-family: sans-serif;
-  }
-  .greatness-points {
-    background-color: #ffd700;
-    color: #333;
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-weight: bold;
-  }
-</style>
