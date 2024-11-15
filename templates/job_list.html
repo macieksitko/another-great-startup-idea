@@ -1,16 +1,20 @@
 <ul class="job-list" id="job-list">
   {{ range .jobOffers }}
-  <li class="job-item">
-    <div class="top-section" >
+  <div
+    class="job-item"
+    hx-get="/items/{{ .ID }}"
+    hx-target=".content-wrapper"
+    hx-push-url="true"
+  >
+    <div class="top-section">
       <div class="title-section">
-        <h3 class="job-title">🚀 {{ .Title }}</h2>
+        <h2 class="job-title">🚀 {{ .Title }}</h2>
         <div class="author">👨‍💼 {{ .Author }}</div>
         <div class="created-at">🕒 {{ .DaysAgo }}</div>
       </div>
       <div class="greatness-points">✨ {{ .Distance }}</div>
     </div>
     <p class="description">📝 {{ .Description }}</p>
-  </li>
+  </div>
   {{ end }}
 </ul>
-

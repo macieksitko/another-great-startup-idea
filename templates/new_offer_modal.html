@@ -9,38 +9,45 @@
         aria-label="Close"
       ></button>
     </div>
-    <form>
-      <div class="modal-body">
-        <div class="form-group">
-          {{template "title" .}}
-          {{template "author" .}}
-          {{template "description" .}}
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Close
-        </button>
-        <button
-          type="submit"
-          class="new-offer-button btn btn-primary"
-          hx-post="/new_offer"
-          hx-target="#job-list"
-          hx-target-400="#new-offer-modal .modal-content"
-          hx-indicator=".new-offer-spinner, .new-offer-button-text"
-          hx-on::after-request="if(event.detail.successful) closeNewOfferModal()"
-          >
-        <span class="new-offer-button-text">Save offer</span>
-        <img
-          id="new-offer-spinner"
-          class="new-offer-spinner htmx-indicator"
-          src="/public/images/bars.svg"
-          alt="Loading..."
-          />
-      </div>
-    </form>
+
+    {{ template "new_offer_form" . }}
   </div>
 </div>
+
+{{ define "new_offer_form" }}
+<form id="new-offer-form">
+  <div class="modal-body">
+    <div class="form-group">
+      {{template "title" .}}
+      {{template "author" .}}
+      {{template "description" .}}
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+      Close
+    </button>
+    <button
+      type="submit"
+      class="new-offer-button btn btn-primary"
+      hx-post="/new_offer"
+      hx-target="#job-list"
+      hx-swap="outerHTML"
+      hx-target-400="#new-offer-form"
+      hx-indicator=".new-offer-spinner, .new-offer-button-text"
+      hx-on::after-request="if(event.detail.successful) closeNewOfferModal()"
+      >
+    <span class="new-offer-button-text">Save offer</span>
+    <img
+      id="new-offer-spinner"
+      class="new-offer-spinner htmx-indicator"
+      src="/public/images/bars.svg"
+      alt="Loading..."
+      />
+  </div>
+</form>
+
+{{ end }}
 
 {{define "title"}}
 <div class="form-group">

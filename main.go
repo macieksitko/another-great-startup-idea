@@ -33,6 +33,7 @@ type GetJobOffer struct {
 	Distance   float64
 }
 
+
 type CreateJobOffer struct {
 	Title    string `form:"title" validate:"required"`
 	Description   string `form:"description" validate:"required"`
@@ -118,7 +119,7 @@ func main() {
 	r.Static("/public", "./public")
 
 	r.LoadHTMLGlob("templates/*")
-	r.Static("/static", "./static")
+	r.Static("/static/css", "./static/css")
 
 	r.GET("/", func(c *gin.Context) {
 		rows, err := db.Query("SELECT id, title, author, description, created_at FROM job_offers ORDER BY id DESC")
@@ -151,6 +152,82 @@ func main() {
 			"title":     "Job Board",
 			"message":   "Available Job Offers",
 			"jobOffers": jobOffers,
+		})
+	})
+
+	r.GET("/items/:id", func(c *gin.Context) {
+		id := c.Param("id")
+    
+		// Use QueryRow instead of Query for single row
+		var job GetJobOffer
+		var createdAt time.Time
+
+		err := db.QueryRow("SELECT id, title, author, description, created_at FROM job_offers WHERE id = ?", id).
+			Scan(&job.ID, &job.Title, &job.Author, &job.Description, &createdAt)
+		
+		if err == sql.ErrNoRows {
+			c.HTML(http.StatusNotFound, "error.html", gin.H{
+				"error": "Job offer not found",
+			})
+			return
+		} else if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		
+		job.DaysAgo = formatTimeAgo(createdAt)
+
+		neighbours, err := db.Query(`
+			SELECT job_offers.id, 
+				job_offers.title, 
+				job_offers.author, 
+				job_offers.description, 
+				job_offers.created_at, 
+				ROUND(distance * 100, 2) as distance 
+			FROM job_offers_embeddings
+			LEFT JOIN job_offers ON job_offers.id = job_offers_embeddings.rowid
+			WHERE embedding MATCH (
+				SELECT embedding FROM job_offers_embeddings WHERE rowid = ?
+			)
+			AND k = 10
+			ORDER BY distance
+		`, id)
+
+		if err != nil {
+			fmt.Println("Embedding error:", err)
+
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		defer neighbours.Close()
+		
+		fmt.Println(neighbours)
+
+		var neighbourJobs []GetJobOffer
+		for neighbours.Next() {
+			var job GetJobOffer
+			var createdAt time.Time
+			
+			err := neighbours.Scan(&job.ID, &job.Title, &job.Author, &job.Description, &createdAt, &job.Distance)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			job.DaysAgo = formatTimeAgo(createdAt)
+			neighbourJobs = append(neighbourJobs, job)
+		}
+
+		if err = neighbours.Err(); err != nil {
+			fmt.Println("Iterator error:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.HTML(http.StatusOK, "single_offer.html", gin.H{
+			"title": "Job Offer",
+			"ID": id,
+			"jobOffer": job,
+			"neighbours": neighbourJobs,
 		})
 	})
 
@@ -255,6 +332,7 @@ func main() {
 			"title": "New Offer",
 		})
 	})
+
 	r.POST("/new_offer", func(c *gin.Context) {
 		var newOffer CreateJobOffer
 
@@ -273,7 +351,7 @@ func main() {
 				fieldName := err.Field()
 				errorMessages[fieldName] = fmt.Sprintf("%s is %s", fieldName, err.Tag())
 			}
-			c.HTML(http.StatusBadRequest, "new_offer_modal.html", gin.H{
+			c.HTML(http.StatusBadRequest, "new_offer_form", gin.H{
 				"title": "New Offer with error",
 				"errors": errorMessages,
 			})

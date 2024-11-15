@@ -1,0 +1,27 @@
+<div class="single-offer-container">
+  <div class="job-detail-container">
+    <div class="job-detail-header">
+      <h2 class="job-detail-title">🚀 {{ .jobOffer.Title }}</h2>
+      <div class="job-detail-meta">
+        <span class="author">👨‍💼 {{ .jobOffer.Author }}</span>
+        <span class="created-at">🕒 {{ .jobOffer.DaysAgo }}</span>
+        <span class="greatness-points">✨ {{ .jobOffer.Distance }}</span>
+      </div>
+    </div>
+    <div class="job-detail-body">
+      <p class="description">📝 {{ .jobOffer.Description }}</p>
+      {{ if .neighbours }} {{ template "graph" . }} {{ end }}
+    </div>
+  </div>
+</div>
+
+{{ define "graph" }}
+<div class="neighbours-container">
+  {{ range .neighbours }}
+  <div class="neighbour-item">
+    <h3>{{ .Title }}</h3>
+    <a> {{ .Distance }}</a>
+  </div>
+  {{ end }}
+</div>
+{{ end }}

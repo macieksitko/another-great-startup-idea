@@ -212,6 +212,7 @@ body {
   border-radius: 15px;
   font-size: 0.8em;
   padding: 5px 10px;
+  margin-top: -10px;
 }
 .job-title {
   font-size: 1.3em;
@@ -232,6 +233,7 @@ body {
   padding: 5px 10px;
   border-radius: 15px;
   font-weight: bold;
+  margin-top: -10px;
 }
 
 /* Search */
@@ -266,4 +268,13 @@ body {
 }
 .search-button:hover {
   background-color: #3a2c21;
+}
+
+.job-detail-container {
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  background-color: #f0e6d2;
+  border-radius: 15px;
+  padding: 20px;
 }
