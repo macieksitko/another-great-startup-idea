@@ -2,8 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
+	"math/rand/v2"
 	"net/http"
 	"os"
 	"time"
@@ -33,6 +36,20 @@ type GetJobOffer struct {
 	Distance   float64
 }
 
+type NeighbourJobOfferNode struct {
+    ID       int  `json:"id"`      
+    Title    string  `json:"name"`
+    Distance float64 `json:"value"`   
+	Vx       float64 `json:"vx"`
+	Vy       float64 `json:"vy"`
+	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
+}
+
+type NeighbourJobOfferLink struct {
+	Source int `json:"source"`
+	Target int `json:"target"`
+}
 
 type CreateJobOffer struct {
 	Title    string `form:"title" validate:"required"`
@@ -175,14 +192,9 @@ func main() {
 			return
 		}
 		
-		job.DaysAgo = formatTimeAgo(createdAt)
-
 		neighbours, err := db.Query(`
 			SELECT job_offers.id, 
 				job_offers.title, 
-				job_offers.author, 
-				job_offers.description, 
-				job_offers.created_at, 
 				ROUND(distance * 100, 2) as distance 
 			FROM job_offers_embeddings
 			LEFT JOIN job_offers ON job_offers.id = job_offers_embeddings.rowid
@@ -203,32 +215,96 @@ func main() {
 		
 		fmt.Println(neighbours)
 
-		var neighbourJobs []GetJobOffer
+		var neighbourJobs []NeighbourJobOfferNode
 		for neighbours.Next() {
-			var job GetJobOffer
-			var createdAt time.Time
-			
-			err := neighbours.Scan(&job.ID, &job.Title, &job.Author, &job.Description, &createdAt, &job.Distance)
+            var (
+                id int
+				title string
+                distance float64
+            )			
+
+			err := neighbours.Scan(&id, &title, &distance)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
-			job.DaysAgo = formatTimeAgo(createdAt)
-			neighbourJobs = append(neighbourJobs, job)
+
+			node := NeighbourJobOfferNode{
+                ID:       id,
+                Title:    title,
+                Distance: distance,
+				X:        100 + (rand.Float64() * 200),  // Random X between 100-300
+				Y:        100 + (rand.Float64() * 200),  // Random Y between 100-300
+				Vx:       0,  // Initial velocity components set to 0
+				Vy:       0,
+            }
+
+			neighbourJobs = append(neighbourJobs, node)
 		}
+
+		var mainJobNode = NeighbourJobOfferNode{
+			ID: job.ID,
+			Title: job.Title,
+			Distance: 0,
+			Vx: 0,
+			Vy: 0,
+			X: 200,
+			Y: 200,
+		};
+
+		neighbourJobs = append([]NeighbourJobOfferNode{mainJobNode}, neighbourJobs...)
+
+		var links []NeighbourJobOfferLink
+		for i := 1; i < len(neighbourJobs); i++ {
+			link := NeighbourJobOfferLink{
+				Source: neighbourJobs[0].ID,  // mainJobNode ID
+				Target: neighbourJobs[i].ID,  // neighbour ID
+			}
+			links = append(links, link)
+		}
+
 
 		if err = neighbours.Err(); err != nil {
 			fmt.Println("Iterator error:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		
 
-		c.HTML(http.StatusOK, "single_offer.html", gin.H{
-			"title": "Job Offer",
-			"ID": id,
-			"jobOffer": job,
-			"neighbours": neighbourJobs,
-		})
+		nodesJSON, err := json.Marshal(neighbourJobs)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		linksJSON, err := json.Marshal(links)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Check if it's an HTMX request
+		if c.GetHeader("HX-Request") == "true" {
+			// Return partial template for HTMX
+			c.HTML(http.StatusOK, "single_offer.html", gin.H{
+				"title": "Job Offer",
+				"ID": id,
+				"jobOffer": job,
+				"nodes": template.JS(nodesJSON),
+				"links": template.JS(linksJSON),
+				"content": "single_offer",
+			})
+		} else {
+			// Return full page template for direct browser requests
+			c.HTML(http.StatusOK, "index.html", gin.H{
+				"title": "Job Offer",
+				"ID": id,
+				"jobOffer": job,
+				"nodes": template.JS(nodesJSON),
+				"links": template.JS(linksJSON),
+				"content": "single_offer",
+			})
+		}
 	})
 
 	r.POST("/search", func(c *gin.Context) {
