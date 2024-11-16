@@ -40,8 +40,6 @@ type NeighbourJobOfferNode struct {
     ID       int  `json:"id"`      
     Title    string  `json:"name"`
     Distance float64 `json:"value"`   
-	Vx       float64 `json:"vx"`
-	Vy       float64 `json:"vy"`
 	X        float64 `json:"x"`
 	Y        float64 `json:"y"`
 }
@@ -235,29 +233,15 @@ func main() {
                 Distance: distance,
 				X:        100 + (rand.Float64() * 200),  // Random X between 100-300
 				Y:        100 + (rand.Float64() * 200),  // Random Y between 100-300
-				Vx:       0,  // Initial velocity components set to 0
-				Vy:       0,
             }
 
 			neighbourJobs = append(neighbourJobs, node)
 		}
 
-		var mainJobNode = NeighbourJobOfferNode{
-			ID: job.ID,
-			Title: job.Title,
-			Distance: 0,
-			Vx: 0,
-			Vy: 0,
-			X: 200,
-			Y: 200,
-		};
-
-		neighbourJobs = append([]NeighbourJobOfferNode{mainJobNode}, neighbourJobs...)
-
 		var links []NeighbourJobOfferLink
 		for i := 1; i < len(neighbourJobs); i++ {
 			link := NeighbourJobOfferLink{
-				Source: neighbourJobs[0].ID,  // mainJobNode ID
+				Source: job.ID,  // mainJobNode ID
 				Target: neighbourJobs[i].ID,  // neighbour ID
 			}
 			links = append(links, link)
